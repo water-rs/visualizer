@@ -1,40 +1,54 @@
 [package]
 name = "waterui-visualizer"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+authors = ["Lexo Liu <me@lexo.cool>"]
+license = "Apache-2.0 OR MIT"
 readme = "README.md"
-repository.workspace = true
+repository = "https://github.com/water-rs/visualizer"
 description = "Real-time audio visualization components for WaterUI"
 keywords = ["audio", "visualizer", "waveform", "wgpu"]
 categories = ["multimedia", "gui", "visualization"]
 
-[lints]
-workspace = true
+[lints.rust]
+missing_docs = "warn"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+style = { level = "warn", priority = -1 }
+correctness = { level = "warn", priority = -1 }
+complexity = { level = "warn", priority = -1 }
+suspicious = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+undocumented_unsafe_blocks = "warn"
+multiple_crate_versions = "allow"
 
 [dependencies]
-waterui-core.workspace = true
-waterui-graphics = { workspace = true, features = ["gpu"] }
-shaderloom.workspace = true
-waterkit-audio = { workspace = true, features = ["recording"] }
-wgpu.workspace = true
+waterui-core = { version = "0.3.0", git = "https://github.com/water-rs/waterui.git", branch = "dev" }
+waterui-graphics = { version = "0.3.0", git = "https://github.com/water-rs/waterui.git", branch = "dev", features = ["gpu"] }
+shaderloom = "0.1.0"
+waterkit-audio = { version = "0.1.0", git = "https://github.com/water-rs/waterkit.git", branch = "dev", features = ["recording"] }
+wgpu = "29.0.4"
 bytemuck = { version = "1.25", features = ["derive"] }
-async-channel.workspace = true
-blocking.workspace = true
-encase.workspace = true
-executor-core.workspace = true
+async-channel = "2.5"
+blocking = "1.7.0"
+encase = "0.12"
+executor-core = "0.7.1"
 num-traits = { version = "0.2", default-features = false }
-futures.workspace = true
-tracing.workspace = true
+futures = "0.3"
+tracing = "0.1.44"
 
 [build-dependencies]
-shaderloom = { workspace = true, features = ["build"] }
+shaderloom = { version = "0.1.0", features = ["build"] }
 
 [dev-dependencies]
-waterui = { path = "../../.." }
-waterui-testing = { path = "../../../testing" }
+waterui = { git = "https://github.com/water-rs/waterui.git", branch = "dev" }
+waterui-testing = { git = "https://github.com/water-rs/waterui.git", branch = "dev" }
 
-# `shaderloom` is used directly by build.rs; cargo-machete 0.9 does not scan build.rs.
 [package.metadata.cargo-machete]
 ignored = ["shaderloom"]

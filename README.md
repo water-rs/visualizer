@@ -1,17 +1,12 @@
-# WaterUI Visualizer
+# waterui-visualizer
 
-Real-time audio visualization components for WaterUI.
+Real-time audio visualization components for WaterUI with GPU-accelerated rendering.
 
-## Views
+## License
 
-- **`Waveform`** - Time-domain oscilloscope display
+Licensed under either of
 
-## Example
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
-```rust
-use waterui_visualizer::Waveform;
-
-Waveform::new()
-    .sensitivity(1.5)
-    .glow(true)
-```
+at your option.
