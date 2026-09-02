@@ -19,6 +19,13 @@ pub const SAMPLES_COUNT: usize = 1024;
 /// Construction is side-effect free. The first visualizer drawing from the
 /// capture starts one recorder task; clones share that task and the signal it
 /// feeds, so several visualizers on one microphone cost one recording session.
+///
+/// # Panics
+///
+/// That recorder task panics when the platform has no default input device, or
+/// when it refuses to start: asking for a live microphone on a machine without
+/// one is an error, not a flat waveform. Give a visualizer a plain [`Samples`]
+/// signal when it has to draw without capture hardware.
 #[derive(Clone)]
 pub struct AudioCapture {
     state: Rc<AudioCaptureState>,
