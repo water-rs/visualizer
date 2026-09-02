@@ -8,7 +8,7 @@ license = "Apache-2.0 OR MIT"
 readme = "README.md"
 repository = "https://github.com/water-rs/visualizer"
 description = "Real-time audio visualization components for WaterUI"
-keywords = ["audio", "visualizer", "waveform", "wgpu"]
+keywords = ["audio", "visualizer", "waveform", "spectrum"]
 categories = ["multimedia", "gui", "visualization"]
 
 [lints.rust]
@@ -30,25 +30,22 @@ multiple_crate_versions = "allow"
 
 [dependencies]
 waterui-core = { version = "0.3.0", git = "https://github.com/water-rs/waterui.git", branch = "dev" }
-waterui-graphics = { version = "0.3.0", git = "https://github.com/water-rs/waterui.git", branch = "dev", features = ["gpu"] }
-shaderloom = "0.1.0"
+waterui-graphics = { version = "0.3.0", git = "https://github.com/water-rs/waterui.git", branch = "dev", default-features = false }
 waterkit-audio = { version = "0.1.0", git = "https://github.com/water-rs/waterkit.git", branch = "dev", features = ["recording"] }
-wgpu = "29.0.4"
-bytemuck = { version = "1.25", features = ["derive"] }
+kurbo = "0.13"
+peniko = "0.6"
+realfft = "3.5"
 async-channel = "2.5"
 blocking = "1.7.0"
-encase = "0.12"
 executor-core = "0.7.1"
-num-traits = { version = "0.2", default-features = false }
 futures = "0.3"
 tracing = "0.1.44"
 
-[build-dependencies]
-shaderloom = { version = "0.1.0", features = ["build"] }
-
 [dev-dependencies]
+pollster = "1.0"
 waterui = { git = "https://github.com/water-rs/waterui.git", branch = "dev" }
 waterui-testing = { git = "https://github.com/water-rs/waterui.git", branch = "dev" }
-
-[package.metadata.cargo-machete]
-ignored = ["shaderloom"]
+# The offscreen scene-export tests rasterize through a real GPU surface, which
+# is `waterui-graphics`' `gpu` half rather than the scene contract the library
+# itself draws through.
+waterui-graphics = { version = "0.3.0", git = "https://github.com/water-rs/waterui.git", branch = "dev", features = ["gpu"] }
