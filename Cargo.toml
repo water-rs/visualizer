@@ -1,6 +1,6 @@
 [package]
 name = "waterui-visualizer"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.95"
 authors = ["Lexo Liu <me@lexo.cool>"]
@@ -30,7 +30,7 @@ multiple_crate_versions = "allow"
 
 [dependencies]
 waterui-core = { version = "0.3.0" }
-waterui-graphics = { version = "0.3.0", default-features = false }
+waterui-graphics = { version = "0.4.0", default-features = false }
 waterkit-audio = { version = "0.1.0", git = "https://github.com/water-rs/waterkit.git", branch = "dev", features = ["recording"] }
 kurbo = "0.13"
 peniko = "0.6"
@@ -44,8 +44,8 @@ tracing = "0.1.44"
 [dev-dependencies]
 pollster = "1.0"
 waterui = "0.3.0"
-waterui-testing = "0.3.0"
+waterui-testing = "0.4.0"
 # The offscreen scene-export tests rasterize through a real GPU surface, which
 # is `waterui-graphics`' `gpu` half rather than the scene contract the library
 # itself draws through.
-waterui-graphics = { version = "0.3.0", features = ["gpu"] }
+waterui-graphics = { version = "0.4.0", features = ["gpu"] }
