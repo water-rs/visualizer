@@ -9,6 +9,6 @@ publish = false
 dev = ["waterui/dynamic_linking"]
 
 [dependencies]
-waterui = "0.4.0"
+waterui = "0.4.1"
 waterui-visualizer = { path = "../.." }
 waterkit-permission = "0.1.2"
