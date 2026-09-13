@@ -1,3 +1,7 @@
+[workspace]
+members = ["examples/audio_visualizer"]
+resolver = "2"
+
 [package]
 name = "waterui-visualizer"
 version = "0.3.0"
