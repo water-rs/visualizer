@@ -445,6 +445,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "audio-visualizer-example"
+version = "0.1.0"
+dependencies = [
+ "waterkit-permission 0.1.2",
+ "waterui",
+ "waterui-visualizer",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7164,6 +7173,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "waterkit-build"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3c34faa4582c345b8e33295e712143765754737c0e0d0a06a2cd703474cf2a5"
+dependencies = [
+ "jni 0.22.4",
+ "ndk-context",
+ "swift-bridge-build",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "waterkit-clipboard"
 version = "0.1.1"
 source = "git+https://github.com/water-rs/waterui.git?rev=c6df302408b42f18be1ea7692d0438973f1e0e62#c6df302408b42f18be1ea7692d0438973f1e0e62"
@@ -7233,6 +7254,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "waterkit-core"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a5280d613f0993df3760be41c5c7c9e76d3dec06e16b40078185390794c1528"
+dependencies = [
+ "executor-core",
+ "jiff",
+ "nami",
+ "thiserror 2.0.20",
+ "uuid",
+]
+
+[[package]]
 name = "waterkit-dialog"
 version = "0.1.1"
 source = "git+https://github.com/water-rs/waterui.git?rev=c6df302408b42f18be1ea7692d0438973f1e0e62#c6df302408b42f18be1ea7692d0438973f1e0e62"
@@ -7281,8 +7315,8 @@ dependencies = [
  "thiserror 2.0.20",
  "wasm-bindgen",
  "waterkit-build 0.1.1 (git+https://github.com/water-rs/waterui.git?rev=c6df302408b42f18be1ea7692d0438973f1e0e62)",
- "waterkit-core",
- "waterkit-permission",
+ "waterkit-core 0.1.1",
+ "waterkit-permission 0.1.1",
  "web-sys",
  "windows 0.62.2",
  "zbus",
@@ -7302,7 +7336,28 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "waterkit-build 0.1.1 (git+https://github.com/water-rs/waterui.git?rev=c6df302408b42f18be1ea7692d0438973f1e0e62)",
- "waterkit-core",
+ "waterkit-core 0.1.1",
+ "web-sys",
+ "windows 0.62.2",
+ "zbus",
+]
+
+[[package]]
+name = "waterkit-permission"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "004b16d504c77e343417f2a25fd481c32110bafe41272b533d24517d01341197"
+dependencies = [
+ "async-channel",
+ "futures",
+ "jni 0.22.4",
+ "js-sys",
+ "ndk-context",
+ "swift-bridge",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "waterkit-build 0.1.2",
+ "waterkit-core 0.1.2",
  "web-sys",
  "windows 0.62.2",
  "zbus",
@@ -7326,7 +7381,7 @@ dependencies = [
  "thiserror 2.0.20",
  "tracing",
  "waterkit-build 0.1.1 (git+https://github.com/water-rs/waterui.git?rev=c6df302408b42f18be1ea7692d0438973f1e0e62)",
- "waterkit-core",
+ "waterkit-core 0.1.1",
  "wayland-sys",
  "wgpu",
  "xcap",
