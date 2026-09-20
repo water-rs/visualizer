@@ -7676,7 +7676,7 @@ dependencies = [
 
 [[package]]
 name = "waterui-visualizer"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "async-channel",
  "blocking",
