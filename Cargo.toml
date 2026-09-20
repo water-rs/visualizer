@@ -47,8 +47,8 @@ tracing = "0.1.44"
 
 [dev-dependencies]
 pollster = "1.0"
-waterui = "0.5.0"
-waterui-testing = "0.5.0"
+waterui = { git = "https://github.com/water-rs/waterui", rev = "b25438ae309d69c8a91c6ecc2580723ed1dd792b" }
+waterui-testing = { git = "https://github.com/water-rs/waterui", rev = "b25438ae309d69c8a91c6ecc2580723ed1dd792b" }
 # The offscreen scene-export tests rasterize through a real GPU surface, which
 # is `waterui-graphics`' `gpu` half rather than the scene contract the library
 # itself draws through.
