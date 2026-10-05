@@ -6,17 +6,16 @@ use waterui_core::{
     reactive::{signal::IntoComputed, watcher::BoxWatcherGuard},
     view::View,
 };
-use waterui_graphics::{Scene2D, SceneInvalidator, SceneView, color::Color};
+use waterui_graphics::{
+    SceneInvalidator, SceneView, color::Color, draw::Recorder, invalidate_on_change,
+};
 
 use crate::analysis::SpectrumAnalyzer;
 use crate::audio::SAMPLES_COUNT;
 use crate::geometry::radial_path;
 use crate::scene::{Drawing, VisualizerScene, draw_glow, fill_path, stroke_path};
 use crate::source::SampleSource;
-use crate::style::{
-    ReactiveStyle, ResolvedStyle, StyleOverrides, VisualizerTheme, invalidate_on_change,
-    style_methods,
-};
+use crate::style::{ReactiveStyle, ResolvedStyle, StyleOverrides, VisualizerTheme, style_methods};
 
 /// How many bands the ring is divided into unless the view says otherwise.
 ///
@@ -34,8 +33,8 @@ const INTERIOR_OPACITY: f32 = 0.35;
 ///
 /// The spectrum is wrapped around a ring: each band pushes the outline out from
 /// a resting radius, and the resulting closed curve is filled and stroked
-/// through the engine-neutral scene contract. The first band sits at twelve
-/// o'clock and the outline is smooth across the seam.
+/// through the render-target-neutral draw contract. The first band sits at
+/// twelve o'clock and the outline is smooth across the seam.
 ///
 /// # Example
 ///
@@ -139,23 +138,29 @@ struct RadialDrawing {
 impl Drawing for RadialDrawing {
     fn draw(
         &mut self,
-        scene: &mut dyn Scene2D,
+        recorder: &mut Recorder,
         samples: &[f32],
         style: &ResolvedStyle,
         area: Rect,
     ) {
-        let amplitude = self.sensitivity.get();
-        let inner = f64::from(self.inner_radius.get());
+        let amplitude = self.sensitivity.snapshot();
+        let inner = f64::from(self.inner_radius.snapshot());
         let ring = radial_path(self.analyzer.analyze(samples), area, inner, amplitude);
-        draw_glow(scene, &ring, style);
-        fill_path(scene, &ring, style.line.multiply_alpha(INTERIOR_OPACITY));
-        stroke_path(scene, &ring, style, style.line);
+        draw_glow(recorder, &ring, style);
+        fill_path(
+            recorder,
+            &ring,
+            style
+                .line
+                .with_alpha(style.line.components[3] * INTERIOR_OPACITY),
+        );
+        stroke_path(recorder, &ring, style, style.line);
     }
 
     fn install(&mut self, invalidator: &SceneInvalidator) -> Vec<BoxWatcherGuard> {
         vec![
-            invalidate_on_change(&self.sensitivity, invalidator),
-            invalidate_on_change(&self.inner_radius, invalidator),
+            invalidate_on_change(invalidator, &self.sensitivity),
+            invalidate_on_change(invalidator, &self.inner_radius),
         ]
     }
 }

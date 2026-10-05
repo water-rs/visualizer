@@ -6,17 +6,16 @@ use waterui_core::{
     reactive::{signal::IntoComputed, watcher::BoxWatcherGuard},
     view::View,
 };
-use waterui_graphics::{Scene2D, SceneInvalidator, SceneView, color::Color};
+use waterui_graphics::{
+    SceneInvalidator, SceneView, color::Color, draw::Recorder, invalidate_on_change,
+};
 
 use crate::analysis::SpectrumAnalyzer;
 use crate::audio::SAMPLES_COUNT;
 use crate::geometry::bar_rects;
 use crate::scene::{Drawing, VisualizerScene, draw_glow, fill_path};
 use crate::source::SampleSource;
-use crate::style::{
-    ReactiveStyle, ResolvedStyle, StyleOverrides, VisualizerTheme, invalidate_on_change,
-    style_methods,
-};
+use crate::style::{ReactiveStyle, ResolvedStyle, StyleOverrides, VisualizerTheme, style_methods};
 
 /// How many bands a spectrum is divided into unless the view says otherwise.
 const DEFAULT_BANDS: usize = 32;
@@ -149,27 +148,27 @@ struct BarsDrawing {
 impl Drawing for BarsDrawing {
     fn draw(
         &mut self,
-        scene: &mut dyn Scene2D,
+        recorder: &mut Recorder,
         samples: &[f32],
         style: &ResolvedStyle,
         area: Rect,
     ) {
-        let amplitude = self.sensitivity.get();
-        let gap = f64::from(self.gap.get());
-        let corner = f64::from(self.corner.get());
+        let amplitude = self.sensitivity.snapshot();
+        let gap = f64::from(self.gap.snapshot());
+        let corner = f64::from(self.corner.snapshot());
         let mut bars = BezPath::new();
         for bar in bar_rects(self.analyzer.analyze(samples), area, amplitude, gap, corner) {
             bars.extend(bar.path_elements(BAR_TOLERANCE));
         }
-        draw_glow(scene, &bars, style);
-        fill_path(scene, &bars, style.line);
+        draw_glow(recorder, &bars, style);
+        fill_path(recorder, &bars, style.line);
     }
 
     fn install(&mut self, invalidator: &SceneInvalidator) -> Vec<BoxWatcherGuard> {
         vec![
-            invalidate_on_change(&self.sensitivity, invalidator),
-            invalidate_on_change(&self.gap, invalidator),
-            invalidate_on_change(&self.corner, invalidator),
+            invalidate_on_change(invalidator, &self.sensitivity),
+            invalidate_on_change(invalidator, &self.gap),
+            invalidate_on_change(invalidator, &self.corner),
         ]
     }
 }

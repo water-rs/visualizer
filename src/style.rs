@@ -4,10 +4,7 @@ use waterui_core::{
     Computed, Environment, Signal as _, SignalExt as _, flatten_signal, impl_constant,
     reactive::{signal::IntoComputed, watcher::BoxWatcherGuard},
 };
-use waterui_graphics::{
-    SceneInvalidator,
-    color::{Color, ResolvedColor},
-};
+use waterui_graphics::{SceneInvalidator, color::Color, draw::WorkingColor, invalidate_on_change};
 
 /// Theme configuration shared by every visualizer.
 ///
@@ -143,9 +140,9 @@ pub struct StyleOverrides {
 /// Every field stays a signal for the drawing's lifetime, so a theme or color
 /// change repaints the surface without the view being rebuilt.
 pub struct ReactiveStyle {
-    background: Computed<ResolvedColor>,
-    line: Computed<ResolvedColor>,
-    glow: Computed<ResolvedColor>,
+    background: Computed<WorkingColor>,
+    line: Computed<WorkingColor>,
+    glow: Computed<WorkingColor>,
     line_width: Computed<f32>,
     glow_intensity: Computed<f32>,
     guards: Vec<BoxWatcherGuard>,
@@ -192,11 +189,11 @@ impl ReactiveStyle {
     /// Repaints the surface whenever any style signal changes.
     pub fn install(&mut self, invalidator: &SceneInvalidator) {
         self.guards = vec![
-            invalidate_on_change(&self.background, invalidator),
-            invalidate_on_change(&self.line, invalidator),
-            invalidate_on_change(&self.glow, invalidator),
-            invalidate_on_change(&self.line_width, invalidator),
-            invalidate_on_change(&self.glow_intensity, invalidator),
+            invalidate_on_change(invalidator, &self.background),
+            invalidate_on_change(invalidator, &self.line),
+            invalidate_on_change(invalidator, &self.glow),
+            invalidate_on_change(invalidator, &self.line_width),
+            invalidate_on_change(invalidator, &self.glow_intensity),
         ];
     }
 
@@ -208,11 +205,11 @@ impl ReactiveStyle {
     /// Reads every style signal for one frame.
     pub fn resolve(&self) -> ResolvedStyle {
         ResolvedStyle {
-            background: to_peniko(&self.background.get()),
-            line: to_peniko(&self.line.get()),
-            glow: to_peniko(&self.glow.get()),
-            line_width: f64::from(self.line_width.get().max(0.0)),
-            glow_intensity: self.glow_intensity.get().clamp(0.0, 1.0),
+            background: self.background.snapshot(),
+            line: self.line.snapshot(),
+            glow: self.glow.snapshot(),
+            line_width: f64::from(self.line_width.snapshot().max(0.0)),
+            glow_intensity: self.glow_intensity.snapshot().clamp(0.0, 1.0),
         }
     }
 }
@@ -220,37 +217,17 @@ impl ReactiveStyle {
 /// One frame's worth of style values.
 #[derive(Debug, Clone, Copy)]
 pub struct ResolvedStyle {
-    pub background: peniko::Color,
-    pub line: peniko::Color,
-    pub glow: peniko::Color,
+    pub background: WorkingColor,
+    pub line: WorkingColor,
+    pub glow: WorkingColor,
     pub line_width: f64,
     pub glow_intensity: f32,
 }
 
-/// Requests a repaint whenever `signal` changes.
-pub fn invalidate_on_change<T: Clone + 'static>(
-    signal: &Computed<T>,
-    invalidator: &SceneInvalidator,
-) -> BoxWatcherGuard {
-    let invalidator = SceneInvalidator::clone(invalidator);
-    signal.watch(move |_| invalidator())
-}
-
 /// Resolves `color` against `env`, keeping the result reactive.
-fn resolve_color(color: impl IntoComputed<Color>, env: &Environment) -> Computed<ResolvedColor> {
+fn resolve_color(color: impl IntoComputed<Color>, env: &Environment) -> Computed<WorkingColor> {
     let env = env.clone();
     flatten_signal(color.into_computed().map(move |color| color.resolve(&env)))
-}
-
-/// Converts a resolved linear-RGB color into the sRGB-encoded color peniko takes.
-fn to_peniko(color: &ResolvedColor) -> peniko::Color {
-    let srgb = color.to_srgb_with_headroom();
-    peniko::Color::new([
-        srgb.red,
-        srgb.green,
-        srgb.blue,
-        color.opacity.clamp(0.0, 1.0),
-    ])
 }
 
 /// Emits the style builder methods every visualizer view shares.
