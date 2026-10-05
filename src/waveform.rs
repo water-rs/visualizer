@@ -6,16 +6,15 @@ use waterui_core::{
     reactive::{signal::IntoComputed, watcher::BoxWatcherGuard},
     view::View,
 };
-use waterui_graphics::{Scene2D, SceneInvalidator, SceneView, color::Color};
+use waterui_graphics::{
+    SceneInvalidator, SceneView, color::Color, draw::Recorder, invalidate_on_change,
+};
 
 use crate::analysis::SampleSmoothing;
 use crate::geometry::waveform_path;
 use crate::scene::{Drawing, VisualizerScene, draw_glow, stroke_path};
 use crate::source::SampleSource;
-use crate::style::{
-    ReactiveStyle, ResolvedStyle, StyleOverrides, VisualizerTheme, invalidate_on_change,
-    style_methods,
-};
+use crate::style::{ReactiveStyle, ResolvedStyle, StyleOverrides, VisualizerTheme, style_methods};
 
 /// Share of the surface height a full-scale sample deflects the trace by.
 const FULL_SCALE_DEFLECTION: f64 = 0.4;
@@ -25,8 +24,8 @@ const TRACE_SMOOTHING: f32 = 0.3;
 
 /// A real-time waveform oscilloscope visualizer.
 ///
-/// The trace is a Catmull-Rom curve through the sample window, stroked through
-/// the engine-neutral scene contract, so the same view draws on the GPU
+/// The trace is a Catmull-Rom curve through the sample window, recorded through
+/// the render-target-neutral draw contract, so the same view draws on the GPU
 /// renderer, the CPU sparse-strip renderer, and any backend that owns its own
 /// scene.
 ///
@@ -110,18 +109,18 @@ struct WaveformDrawing {
 impl Drawing for WaveformDrawing {
     fn draw(
         &mut self,
-        scene: &mut dyn Scene2D,
+        recorder: &mut Recorder,
         samples: &[f32],
         style: &ResolvedStyle,
         area: Rect,
     ) {
-        let amplitude = FULL_SCALE_DEFLECTION * self.sensitivity.get();
+        let amplitude = FULL_SCALE_DEFLECTION * self.sensitivity.snapshot();
         let trace = waveform_path(self.smoothing.apply(samples), area, amplitude);
-        draw_glow(scene, &trace, style);
-        stroke_path(scene, &trace, style, style.line);
+        draw_glow(recorder, &trace, style);
+        stroke_path(recorder, &trace, style, style.line);
     }
 
     fn install(&mut self, invalidator: &SceneInvalidator) -> Vec<BoxWatcherGuard> {
-        vec![invalidate_on_change(&self.sensitivity, invalidator)]
+        vec![invalidate_on_change(invalidator, &self.sensitivity)]
     }
 }

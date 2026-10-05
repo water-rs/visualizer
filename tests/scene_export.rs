@@ -1,15 +1,16 @@
 //! Renders every visualizer from a deterministic synthetic signal.
 //!
 //! These are export tests: they drive each visualizer's scene content through
-//! an offscreen surface and write the result out to be looked at. What the
-//! geometry has to *be* is asserted in the library's own unit tests, where a
-//! curve can be checked as a curve instead of as pixels.
+//! the Cherenkov GPU engine and the CPU raster engine and write the result out
+//! to be looked at. What the geometry has to *be* is asserted in the library's
+//! own unit tests, where a curve can be checked as a curve instead of as
+//! pixels.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use waterui_core::{Computed, Environment};
 use waterui_graphics::color::{Color, Srgb};
-use waterui_graphics::{GpuRuntime, OffscreenRenderConfig, OffscreenSize, SceneView, wgpu};
+use waterui_graphics::{OffscreenImage, OffscreenRenderer, OffscreenSize, SceneView};
 use waterui_visualizer::{
     RadialSpectrum, SAMPLES_COUNT, Samples, SpectrumBars, VisualizerTheme, Waveform,
 };
@@ -79,55 +80,85 @@ fn spectrum_signal() -> Samples {
     )
 }
 
-/// Rasterizes `scene` at `width` x `height` and writes it out as `name`.
-fn export(scene: SceneView, name: &str, width: u32, height: u32) -> PathBuf {
+/// Rasterizes the scene `make_scene` builds at `width` x `height` on the GPU
+/// and the raster engine and writes both frames out under `name`.
+///
+/// Each engine gets its own scene content: what a first render registers is
+/// that engine's, which is how a real backend meets the content too.
+fn export(make_scene: impl Fn() -> SceneView, name: &str, width: u32, height: u32) {
     let directory = Path::new(OUTPUT_DIRECTORY);
     std::fs::create_dir_all(directory).expect("output directory must be creatable");
-    let runtime = pollster::block_on(GpuRuntime::new())
-        .expect("the visualizer scene export requires a working GPU runtime");
     let size = OffscreenSize::try_from_pixels(width, height).expect("test size must be valid");
-    let config = OffscreenRenderConfig::new(size).format(wgpu::TextureFormat::Rgba8Unorm);
-    let mut env = Environment::new();
-    let output = pollster::block_on(
-        scene
-            .into_gpu_surface()
-            .render_offscreen(&runtime, config, &mut env),
-    )
-    .expect("offscreen render should succeed");
-    let path = directory.join(name);
-    output.save_png(&path).expect("png should be written");
-    path
+    let save = |image: OffscreenImage, file: String| {
+        image
+            .save_png(directory.join(file))
+            .expect("png should be written");
+    };
+
+    let gpu = OffscreenRenderer::<waterui_graphics::cherenkov_gpu::Gpu>::new()
+        .expect("the visualizer scene export requires a working GPU engine");
+    save(
+        gpu.render(make_scene().into_content().as_mut(), size, 1.0)
+            .expect("offscreen render should succeed"),
+        format!("{name}-gpu.png"),
+    );
+
+    let cpu = OffscreenRenderer::<waterui_graphics::cherenkov_cpu::Raster>::cpu()
+        .expect("raster engine should initialise");
+    save(
+        cpu.render(make_scene().into_content().as_mut(), size, 1.0)
+            .expect("offscreen render should succeed"),
+        format!("{name}-raster.png"),
+    );
 }
 
 #[test]
 fn the_waveform_draws_a_sine_sweep() {
     let env = Environment::new();
-    let scene = Waveform::new(Computed::constant(sweep(SAMPLES_COUNT, 2.0, 24.0)))
-        .theme(VisualizerTheme::oscilloscope())
-        .line_width(2.0)
-        .into_scene(&env);
-    export(scene, "visualizer_waveform.png", 480, 240);
+    export(
+        || {
+            Waveform::new(Computed::constant(sweep(SAMPLES_COUNT, 2.0, 24.0)))
+                .theme(VisualizerTheme::oscilloscope())
+                .line_width(2.0)
+                .into_scene(&env)
+        },
+        "visualizer_waveform",
+        480,
+        240,
+    );
 }
 
 #[test]
 fn the_spectrum_draws_bars_of_differing_height() {
     let env = Environment::new();
-    let scene = SpectrumBars::new(Computed::constant(spectrum_signal()))
-        .bands(24)
-        .into_scene(&env);
-    export(scene, "visualizer_bars.png", 480, 240);
+    export(
+        || {
+            SpectrumBars::new(Computed::constant(spectrum_signal()))
+                .bands(24)
+                .into_scene(&env)
+        },
+        "visualizer_bars",
+        480,
+        240,
+    );
 }
 
 #[test]
 fn the_radial_spectrum_draws_a_closed_ring() {
     let env = Environment::new();
-    let scene = RadialSpectrum::new(Computed::constant(spectrum_signal()))
-        .bands(48)
-        .inner_radius(0.4)
-        .line_color(Color::from(Srgb::new(1.0, 0.45, 0.15)))
-        .glow_color(Color::from(Srgb::new(1.0, 0.2, 0.0)))
-        .glow(0.9)
-        .line_width(3.0)
-        .into_scene(&env);
-    export(scene, "visualizer_radial.png", 360, 360);
+    export(
+        || {
+            RadialSpectrum::new(Computed::constant(spectrum_signal()))
+                .bands(48)
+                .inner_radius(0.4)
+                .line_color(Color::from(Srgb::new(1.0, 0.45, 0.15)))
+                .glow_color(Color::from(Srgb::new(1.0, 0.2, 0.0)))
+                .glow(0.9)
+                .line_width(3.0)
+                .into_scene(&env)
+        },
+        "visualizer_radial",
+        360,
+        360,
+    );
 }

@@ -1,9 +1,9 @@
 //! Real-time audio visualization components for `WaterUI`.
 //!
-//! Every visualizer is a map from a sample signal to `kurbo` geometry, drawn
-//! through `waterui-graphics`' engine-neutral `Scene2D` contract. Nothing here
-//! owns a GPU device, a pipeline or a shader, so the same views render on the
-//! GPU compute renderer, the CPU sparse-strip renderer used on embedded
+//! Every visualizer is a map from a sample signal to `kurbo` geometry, recorded
+//! through `waterui-graphics`' render-target-neutral `draw` contract. Nothing
+//! here owns a GPU device, a pipeline or a shader, so the same views render on
+//! the GPU compute renderer, the CPU sparse-strip renderer used on embedded
 //! targets, and any backend that draws into its own scene.
 //!
 //! # Views
