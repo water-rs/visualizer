@@ -13,11 +13,12 @@ pub type Samples = Arc<[f32]>;
 
 /// A live source of the sample windows a visualizer draws.
 ///
-/// [`subscribe`](SampleSource::subscribe) is called once, when a visualizer
-/// starts drawing. A source that owns hardware opens it there rather than when
+/// [`subscribe`](SampleSource::subscribe) is called once, when a visualizer's
+/// canvas mounts. A source that owns hardware opens it there rather than when
 /// the view is constructed, so building a view never starts a microphone —
 /// which is also what lets a visualizer be rendered from a synthetic signal
-/// with no capture session at all.
+/// with no capture session at all. The canvas keeps the source for as long as
+/// it is mounted and drops it on unmount, which closes what it opened.
 pub trait SampleSource: 'static {
     /// Returns the signal carrying successive sample windows.
     fn subscribe(&self) -> Computed<Samples>;

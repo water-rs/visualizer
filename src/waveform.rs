@@ -1,20 +1,19 @@
 //! The time-domain oscilloscope visualizer.
 
-use kurbo::Rect;
+use std::sync::Arc;
+
+use kurbo::BezPath;
 use waterui_core::{
-    Computed, Environment, IntoSignalF32, Signal as _, SignalExt as _,
-    reactive::{signal::IntoComputed, watcher::BoxWatcherGuard},
+    Computed, Environment, IntoSignalF32, SignalExt as _, reactive::signal::IntoComputed,
     view::View,
 };
-use waterui_graphics::{
-    SceneInvalidator, SceneView, color::Color, draw::Recorder, invalidate_on_change,
-};
+use waterui_graphics::{canvas::Canvas, color::Color};
 
 use crate::analysis::SampleSmoothing;
-use crate::geometry::waveform_path;
-use crate::scene::{Drawing, VisualizerScene, draw_glow, stroke_path};
-use crate::source::SampleSource;
-use crate::style::{ReactiveStyle, ResolvedStyle, StyleOverrides, VisualizerTheme, style_methods};
+use crate::canvas::{derive_path, draw_background, draw_glow, draw_outline, subscribe};
+use crate::geometry::{surface_rect, waveform_path};
+use crate::source::{SampleSource, Samples};
+use crate::style::{Style, StyleOverrides, VisualizerTheme, style_methods};
 
 /// Share of the surface height a full-scale sample deflects the trace by.
 const FULL_SCALE_DEFLECTION: f64 = 0.4;
@@ -24,10 +23,9 @@ const TRACE_SMOOTHING: f32 = 0.3;
 
 /// A real-time waveform oscilloscope visualizer.
 ///
-/// The trace is a Catmull-Rom curve through the sample window, recorded through
-/// the render-target-neutral draw contract, so the same view draws on the GPU
-/// renderer, the CPU sparse-strip renderer, and any backend that owns its own
-/// scene.
+/// The trace is a Catmull-Rom curve through the sample window, drawn on a
+/// canvas, so the same view is realized by whichever renderer draws the screen
+/// around it.
 ///
 /// # Example
 ///
@@ -65,62 +63,55 @@ impl<S: SampleSource> Waveform<S> {
 
     style_methods!(ink = "the trace");
 
-    /// The scene content this view draws.
+    /// The canvas this view draws.
     ///
     /// A view returns this from its body; taking it directly is what lets a
-    /// caller compose the trace into a scene of its own, or rasterize it
-    /// offscreen.
-    pub fn into_scene(self, env: &Environment) -> SceneView {
+    /// caller compose the trace into a canvas of its own.
+    ///
+    /// The canvas records once, when it mounts. The trace is a live operand
+    /// derived from the sample signal, once per window, and the style signals
+    /// are live operands of the commands that paint with them, so nothing
+    /// records again as audio arrives.
+    pub fn into_canvas(self, env: &Environment) -> Canvas {
         let Self {
             source,
             theme,
             sensitivity,
             style,
         } = self;
-        SceneView::new(VisualizerScene::new(
-            source,
-            ReactiveStyle::new(&theme, style, env),
-            WaveformDrawing {
-                sensitivity,
-                smoothing: SampleSmoothing::new(TRACE_SMOOTHING),
-            },
-        ))
+        let style = Style::new(&theme, style, env);
+        Canvas::new(move |cx| {
+            let samples = subscribe(cx, source);
+            let smoothed = samples.scan(
+                SampleSmoothing::new(TRACE_SMOOTHING),
+                |smoothing, samples: Samples| -> Arc<[f32]> { smoothing.apply(&samples).into() },
+            );
+            let layout = cx
+                .size()
+                .map(|size| surface_rect(size.width, size.height))
+                .zip(&sensitivity);
+            let trace = derive_path(&smoothed.zip(&layout), |(samples, (area, sensitivity))| {
+                area.map_or_else(BezPath::new, |area| {
+                    waveform_path(&samples, area, FULL_SCALE_DEFLECTION * sensitivity)
+                })
+            });
+            // The path signal only listens to the smoothed window while the
+            // smoothing is alive.
+            cx.keep(smoothed);
+            draw_background(cx, &style);
+            draw_glow(cx, &style, &trace);
+            draw_outline(cx, &style, &trace);
+        })
     }
 }
 
 impl<S: SampleSource> View for Waveform<S> {
     fn body(self, env: &Environment) -> impl View {
-        self.into_scene(env)
+        self.into_canvas(env)
     }
 }
 
 /// Convenience constructor for a [`Waveform`].
 pub fn waveform<S: SampleSource>(source: S) -> Waveform<S> {
     Waveform::new(source)
-}
-
-/// Draws the smoothed sample window as one stroked curve.
-#[derive(Debug)]
-struct WaveformDrawing {
-    sensitivity: Computed<f64>,
-    smoothing: SampleSmoothing,
-}
-
-impl Drawing for WaveformDrawing {
-    fn draw(
-        &mut self,
-        recorder: &mut Recorder,
-        samples: &[f32],
-        style: &ResolvedStyle,
-        area: Rect,
-    ) {
-        let amplitude = FULL_SCALE_DEFLECTION * self.sensitivity.snapshot();
-        let trace = waveform_path(self.smoothing.apply(samples), area, amplitude);
-        draw_glow(recorder, &trace, style);
-        stroke_path(recorder, &trace, style, style.line);
-    }
-
-    fn install(&mut self, invalidator: &SceneInvalidator) -> Vec<BoxWatcherGuard> {
-        vec![invalidate_on_change(invalidator, &self.sensitivity)]
-    }
 }

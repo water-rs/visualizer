@@ -3,11 +3,12 @@
 Real-time audio visualization components for WaterUI: an oscilloscope trace, a
 frequency-bar spectrum, and a circular spectrum.
 
-Each visualizer is a map from a sample signal to `kurbo` geometry, recorded
-through `waterui-graphics`' render-target-neutral `draw` contract. The crate
-owns no GPU device, pipeline or shader, so the same recording replays on the
-GPU compute renderer, the CPU sparse-strip renderer used on embedded targets,
-and any backend that draws into its own scene.
+Each visualizer is a map from a sample signal to vector geometry, drawn on a
+`waterui-graphics` canvas. The canvas records once, when it mounts: the
+geometry is a live operand derived from the sample signal once per audio
+window, and the style signals are live operands too, so nothing records again
+as sound arrives. The crate owns no GPU device, pipeline or shader, so the
+same views are realized by whichever renderer draws the screen around them.
 
 A visualizer draws whatever `SampleSource` it is given: `AudioCapture` is the
 microphone, and a `Computed<Samples>` is anything else — a decoded file, a

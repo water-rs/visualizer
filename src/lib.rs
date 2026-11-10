@@ -1,10 +1,12 @@
 //! Real-time audio visualization components for `WaterUI`.
 //!
-//! Every visualizer is a map from a sample signal to `kurbo` geometry, recorded
-//! through `waterui-graphics`' render-target-neutral `draw` contract. Nothing
-//! here owns a GPU device, a pipeline or a shader, so the same views render on
-//! the GPU compute renderer, the CPU sparse-strip renderer used on embedded
-//! targets, and any backend that draws into its own scene.
+//! Every visualizer is a map from a sample signal to vector geometry, drawn on a
+//! `waterui-graphics` canvas. The canvas records once, when it mounts: the
+//! geometry is a live operand derived from the sample signal, once per audio
+//! window, and the style signals are live operands too, so nothing records
+//! again as sound arrives. Nothing here owns a GPU device, a pipeline or a
+//! shader, so the same views are realized by whichever renderer draws the
+//! screen around them.
 //!
 //! # Views
 //!
@@ -31,8 +33,8 @@ pub mod geometry;
 
 mod audio;
 mod bars;
+mod canvas;
 mod radial;
-mod scene;
 mod source;
 mod style;
 mod waveform;
