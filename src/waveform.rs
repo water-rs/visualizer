@@ -95,9 +95,6 @@ impl<S: SampleSource> Waveform<S> {
                     waveform_path(&samples, area, FULL_SCALE_DEFLECTION * sensitivity)
                 })
             });
-            // The path signal only listens to the smoothed window while the
-            // smoothing is alive.
-            cx.keep(smoothed);
             draw_background(cx, &style);
             draw_glow(cx, &style, &trace);
             draw_outline(cx, &style, &trace);

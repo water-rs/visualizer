@@ -129,9 +129,6 @@ impl<S: SampleSource> RadialSpectrum<S> {
                     })
                 },
             );
-            // The path signal only listens to the spectrum while the
-            // spectrum is alive.
-            cx.keep(spectrum);
             draw_background(cx, &style);
             draw_glow(cx, &style, &ring);
             draw_interior(cx, &style, &ring, INTERIOR_OPACITY);

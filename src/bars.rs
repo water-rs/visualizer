@@ -142,9 +142,6 @@ impl<S: SampleSource> SpectrumBars<S> {
                     path
                 },
             );
-            // The path signal only listens to the spectrum while the
-            // spectrum is alive.
-            cx.keep(spectrum);
             draw_background(cx, &style);
             draw_glow(cx, &style, &bars);
             cx.fill(bars, style.line().clone());
