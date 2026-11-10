@@ -1,21 +1,22 @@
 //! The circular spectrum visualizer.
 
-use kurbo::Rect;
+use std::sync::Arc;
+
+use kurbo::BezPath;
 use waterui_core::{
-    Computed, Environment, IntoSignalF32, Signal as _, SignalExt as _,
-    reactive::{signal::IntoComputed, watcher::BoxWatcherGuard},
+    Computed, Environment, IntoSignalF32, SignalExt as _, reactive::signal::IntoComputed,
     view::View,
 };
-use waterui_graphics::{
-    SceneInvalidator, SceneView, color::Color, draw::Recorder, invalidate_on_change,
-};
+use waterui_graphics::{canvas::Canvas, color::Color};
 
 use crate::analysis::SpectrumAnalyzer;
 use crate::audio::SAMPLES_COUNT;
-use crate::geometry::radial_path;
-use crate::scene::{Drawing, VisualizerScene, draw_glow, fill_path, stroke_path};
-use crate::source::SampleSource;
-use crate::style::{ReactiveStyle, ResolvedStyle, StyleOverrides, VisualizerTheme, style_methods};
+use crate::canvas::{
+    derive_path, draw_background, draw_glow, draw_interior, draw_outline, subscribe,
+};
+use crate::geometry::{radial_path, surface_rect};
+use crate::source::{SampleSource, Samples};
+use crate::style::{Style, StyleOverrides, VisualizerTheme, style_methods};
 
 /// How many bands the ring is divided into unless the view says otherwise.
 ///
@@ -33,7 +34,7 @@ const INTERIOR_OPACITY: f32 = 0.35;
 ///
 /// The spectrum is wrapped around a ring: each band pushes the outline out from
 /// a resting radius, and the resulting closed curve is filled and stroked
-/// through the render-target-neutral draw contract. The first band sits at
+/// as one path on a canvas. The first band sits at
 /// twelve o'clock and the outline is smooth across the seam.
 ///
 /// # Example
@@ -90,12 +91,16 @@ impl<S: SampleSource> RadialSpectrum<S> {
 
     style_methods!(ink = "the ring");
 
-    /// The scene content this view draws.
+    /// The canvas this view draws.
     ///
     /// A view returns this from its body; taking it directly is what lets a
-    /// caller compose the ring into a scene of its own, or rasterize it
-    /// offscreen.
-    pub fn into_scene(self, env: &Environment) -> SceneView {
+    /// caller compose the ring into a canvas of its own.
+    ///
+    /// The canvas records once, when it mounts. The ring path is a live
+    /// operand derived from the sample signal, once per window, and the style
+    /// signals are live operands of the commands that paint with them, so
+    /// nothing records again as audio arrives.
+    pub fn into_canvas(self, env: &Environment) -> Canvas {
         let Self {
             source,
             theme,
@@ -104,63 +109,41 @@ impl<S: SampleSource> RadialSpectrum<S> {
             bands,
             inner_radius,
         } = self;
-        SceneView::new(VisualizerScene::new(
-            source,
-            ReactiveStyle::new(&theme, style, env),
-            RadialDrawing {
-                analyzer: SpectrumAnalyzer::new(SAMPLES_COUNT, bands),
-                sensitivity,
-                inner_radius,
-            },
-        ))
+        let style = Style::new(&theme, style, env);
+        Canvas::new(move |cx| {
+            let samples = subscribe(cx, source);
+            let spectrum = samples.scan(
+                SpectrumAnalyzer::new(SAMPLES_COUNT, bands),
+                |analyzer, samples: Samples| -> Arc<[f32]> { analyzer.analyze(&samples).into() },
+            );
+            let layout = cx
+                .size()
+                .map(|size| surface_rect(size.width, size.height))
+                .zip(&sensitivity)
+                .zip(&inner_radius);
+            let ring = derive_path(
+                &spectrum.zip(&layout),
+                |(bands, ((area, amplitude), inner))| {
+                    area.map_or_else(BezPath::new, |area| {
+                        radial_path(&bands, area, f64::from(inner), amplitude)
+                    })
+                },
+            );
+            draw_background(cx, &style);
+            draw_glow(cx, &style, &ring);
+            draw_interior(cx, &style, &ring, INTERIOR_OPACITY);
+            draw_outline(cx, &style, &ring);
+        })
     }
 }
 
 impl<S: SampleSource> View for RadialSpectrum<S> {
     fn body(self, env: &Environment) -> impl View {
-        self.into_scene(env)
+        self.into_canvas(env)
     }
 }
 
 /// Convenience constructor for a [`RadialSpectrum`].
 pub fn radial_spectrum<S: SampleSource>(source: S) -> RadialSpectrum<S> {
     RadialSpectrum::new(source)
-}
-
-/// Draws the analyzed spectrum as one closed, filled and stroked ring.
-#[derive(Debug)]
-struct RadialDrawing {
-    analyzer: SpectrumAnalyzer,
-    sensitivity: Computed<f64>,
-    inner_radius: Computed<f32>,
-}
-
-impl Drawing for RadialDrawing {
-    fn draw(
-        &mut self,
-        recorder: &mut Recorder,
-        samples: &[f32],
-        style: &ResolvedStyle,
-        area: Rect,
-    ) {
-        let amplitude = self.sensitivity.snapshot();
-        let inner = f64::from(self.inner_radius.snapshot());
-        let ring = radial_path(self.analyzer.analyze(samples), area, inner, amplitude);
-        draw_glow(recorder, &ring, style);
-        fill_path(
-            recorder,
-            &ring,
-            style
-                .line
-                .with_alpha(style.line.components[3] * INTERIOR_OPACITY),
-        );
-        stroke_path(recorder, &ring, style, style.line);
-    }
-
-    fn install(&mut self, invalidator: &SceneInvalidator) -> Vec<BoxWatcherGuard> {
-        vec![
-            invalidate_on_change(invalidator, &self.sensitivity),
-            invalidate_on_change(invalidator, &self.inner_radius),
-        ]
-    }
 }

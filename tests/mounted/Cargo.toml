@@ -1,0 +1,19 @@
+[package]
+name = "waterui-visualizer-mounted-tests"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.99"
+description = "Mounted end-to-end tests for waterui-visualizer through a real backend runtime"
+
+# These tests drive a real backend runtime (`waterui-testing` + `hydrolysis` +
+# `hydrolysis-m3`), whose crate graph is far wider than the component's own.
+# They live in their own package so `cargo test -p waterui-visualizer`
+# exercises the crate's own suite without mounting a whole framework.
+[dev-dependencies]
+waterui-visualizer = { path = "../.." }
+waterui = "0.5.2"
+waterui-testing = "0.5.1"
+waterui-core = "0.5.1"
+# The rendered tests need a widget theme the default test theme does not carry.
+hydrolysis-m3 = "0.3.1"

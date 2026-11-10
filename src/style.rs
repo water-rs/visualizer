@@ -1,10 +1,10 @@
 //! Colors and stroke widths shared by every visualizer.
 
 use waterui_core::{
-    Computed, Environment, Signal as _, SignalExt as _, flatten_signal, impl_constant,
-    reactive::{signal::IntoComputed, watcher::BoxWatcherGuard},
+    Computed, Environment, SignalExt as _, flatten_signal, impl_constant,
+    reactive::signal::IntoComputed,
 };
-use waterui_graphics::{SceneInvalidator, color::Color, draw::WorkingColor, invalidate_on_change};
+use waterui_graphics::color::{Color, WorkingColor};
 
 /// Theme configuration shared by every visualizer.
 ///
@@ -137,26 +137,20 @@ pub struct StyleOverrides {
 
 /// A visualizer's style, resolved against an environment and still reactive.
 ///
-/// Every field stays a signal for the drawing's lifetime, so a theme or color
-/// change repaints the surface without the view being rebuilt.
-pub struct ReactiveStyle {
+/// Every field stays a signal for the canvas's lifetime. The canvas binds each
+/// one as a live operand of the command that paints with it, so a theme or
+/// color change updates that operand in place without the view being rebuilt
+/// or the canvas recorded again.
+#[derive(Debug, Clone)]
+pub struct Style {
     background: Computed<WorkingColor>,
     line: Computed<WorkingColor>,
     glow: Computed<WorkingColor>,
     line_width: Computed<f32>,
     glow_intensity: Computed<f32>,
-    guards: Vec<BoxWatcherGuard>,
 }
 
-impl core::fmt::Debug for ReactiveStyle {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("ReactiveStyle")
-            .field("installed", &!self.guards.is_empty())
-            .finish_non_exhaustive()
-    }
-}
-
-impl ReactiveStyle {
+impl Style {
     /// Resolves `theme` against `env`, with `overrides` taking precedence.
     pub fn new(
         theme: &Computed<VisualizerTheme>,
@@ -182,46 +176,33 @@ impl ReactiveStyle {
             glow_intensity: overrides
                 .glow_intensity
                 .unwrap_or_else(|| theme.map(|theme| theme.glow_intensity).computed()),
-            guards: Vec::new(),
         }
     }
 
-    /// Repaints the surface whenever any style signal changes.
-    pub fn install(&mut self, invalidator: &SceneInvalidator) {
-        self.guards = vec![
-            invalidate_on_change(invalidator, &self.background),
-            invalidate_on_change(invalidator, &self.line),
-            invalidate_on_change(invalidator, &self.glow),
-            invalidate_on_change(invalidator, &self.line_width),
-            invalidate_on_change(invalidator, &self.glow_intensity),
-        ];
+    /// The background color.
+    pub const fn background(&self) -> &Computed<WorkingColor> {
+        &self.background
     }
 
-    /// Stops watching every style signal.
-    pub fn uninstall(&mut self) {
-        self.guards.clear();
+    /// The color of the drawn geometry.
+    pub const fn line(&self) -> &Computed<WorkingColor> {
+        &self.line
     }
 
-    /// Reads every style signal for one frame.
-    pub fn resolve(&self) -> ResolvedStyle {
-        ResolvedStyle {
-            background: self.background.snapshot(),
-            line: self.line.snapshot(),
-            glow: self.glow.snapshot(),
-            line_width: f64::from(self.line_width.snapshot().max(0.0)),
-            glow_intensity: self.glow_intensity.snapshot().clamp(0.0, 1.0),
-        }
+    /// The color of the halo around the drawn geometry.
+    pub const fn glow(&self) -> &Computed<WorkingColor> {
+        &self.glow
     }
-}
 
-/// One frame's worth of style values.
-#[derive(Debug, Clone, Copy)]
-pub struct ResolvedStyle {
-    pub background: WorkingColor,
-    pub line: WorkingColor,
-    pub glow: WorkingColor,
-    pub line_width: f64,
-    pub glow_intensity: f32,
+    /// The stroke width, in points.
+    pub const fn line_width(&self) -> &Computed<f32> {
+        &self.line_width
+    }
+
+    /// The glow intensity, `0.0` for none to `1.0` for full.
+    pub const fn glow_intensity(&self) -> &Computed<f32> {
+        &self.glow_intensity
+    }
 }
 
 /// Resolves `color` against `env`, keeping the result reactive.
