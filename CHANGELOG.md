@@ -4,6 +4,30 @@ All notable changes to `waterui-visualizer` are documented in this file.
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/water-rs/visualizer/compare/v0.5.0...v0.6.0) - 2026-11-14
+
+### Added
+
+- [**breaking**] draw through the waterui Canvas API
+- port to the render-target-neutral recording contract
+
+### Fixed
+
+- drop the spectrum keep-alives now that a watched scan holds its upstream
+- *(ci)* make the MSRV job build with the declared floor ([#29](https://github.com/water-rs/visualizer/pull/29))
+
+### Other
+
+- release from main and point sibling deps to main
+- restore the Hydrolysis test fonts from the Actions cache ([#41](https://github.com/water-rs/visualizer/pull/41))
+- *(deps)* point migrated Batch 1 git dependencies to main ([#38](https://github.com/water-rs/visualizer/pull/38)) ([#39](https://github.com/water-rs/visualizer/pull/39))
+- pass the release pull request's gate without CI
+- drop the nami git pin and ride waterui dev at ec09f64
+- target the engine's Apple deployment floor
+- trim the patch table to the entries the graph uses
+- repin the vello fork to the glifo canonical-location fix
+- consume the 0.5.0 framework wave from crates.io ([#28](https://github.com/water-rs/visualizer/pull/28))
+
 ## [0.4.0](https://github.com/water-rs/visualizer/compare/v0.3.0...v0.4.0) - 2026-09-11
 
 ### Added
