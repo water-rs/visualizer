@@ -64,14 +64,14 @@ block = { git = "https://github.com/Dicklesworthstone/rust-block", rev = "b39ae8
 # nami 0.13.0 predates the `scan` combinator (water-rs/nami#64) the spectrum
 # analysis is derived with. All three nami crates ride `dev` so the graph
 # carries one `Signal` trait. Drop once a release carries `scan`.
-nami = { git = "https://github.com/water-rs/nami", branch = "dev" }
-nami-core = { git = "https://github.com/water-rs/nami", branch = "dev" }
-nami-derive = { git = "https://github.com/water-rs/nami", branch = "dev" }
+nami = { git = "https://github.com/water-rs/nami", branch = "main" }
+nami-core = { git = "https://github.com/water-rs/nami", branch = "main" }
+nami-derive = { git = "https://github.com/water-rs/nami", branch = "main" }
 
 # suiteki 0.1.1 on crates.io implements nami-core 0.3's `Signal`; suiteki's
 # `dev` implements 0.5's (water-rs/suiteki#29), the source the framework's own
 # patch table names. Drop once a release carries it.
-suiteki = { git = "https://github.com/water-rs/suiteki", branch = "dev" }
+suiteki = { git = "https://github.com/water-rs/suiteki", branch = "main" }
 
 # Every `waterui-*` crate in the graph must resolve to this one commit — a
 # registry `waterui-core` beside the facade's own path dependencies gives two
@@ -133,27 +133,27 @@ cherenkov = { git = "https://github.com/water-rs/waterui", branch = "dev" }
 # `waterkit-core` beside a patched sibling is a second source of the types
 # they share. The source is waterkit's `dev`, the one water-rs/waterui's patch
 # table names; `Cargo.lock` records the exact commit.
-waterkit-build = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-camera = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-clipboard = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-codec = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-dialog = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-fs = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-haptic = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-location = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-permission = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-screen = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-audio = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-core = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-video = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-video-container = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-video-core = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-video-player = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
-waterkit-video-streaming = { git = "https://github.com/water-rs/waterkit", branch = "dev" }
+waterkit-build = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-camera = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-clipboard = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-codec = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-dialog = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-fs = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-haptic = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-location = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-permission = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-screen = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-audio = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-core = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-video = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-video-container = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-video-core = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-video-player = { git = "https://github.com/water-rs/waterkit", branch = "main" }
+waterkit-video-streaming = { git = "https://github.com/water-rs/waterkit", branch = "main" }
 
 # The engine's shader build step follows shaderloom's `dev`, as the framework's
 # own table does.
-shaderloom = { git = "https://github.com/water-rs/shaderloom", branch = "dev" }
+shaderloom = { git = "https://github.com/water-rs/shaderloom", branch = "main" }
 
 # Mirrored from water-rs/waterui's workspace [patch.crates-io] (itself
 # mirrored from the cherenkov workspace's table, water-rs/cherenkov#229).
@@ -176,4 +176,4 @@ wgpu-naga-bridge = { git = "https://github.com/water-rs/wgpu", branch = "fix/met
 wgpu-types = { git = "https://github.com/water-rs/wgpu", branch = "fix/metal-shared-memory-v30" }
 # wgpu-external-frame hands wgpu-hal's GLES textures to its own glow context, so
 # it must link the glow 0.18 the branch above carries.
-wgpu-external-frame = { git = "https://github.com/water-rs/wgpu-external-frame", branch = "dev" }
+wgpu-external-frame = { git = "https://github.com/water-rs/wgpu-external-frame", branch = "main" }
